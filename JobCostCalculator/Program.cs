@@ -10,9 +10,6 @@ namespace JobCostCalculator
     {
         private static void Main(string[] args)
         {
-            var calc = new JobCostCalculator();
-
-            calc.Calculate();
         }
     }
 }
