@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobCostCalculator", "JobCostCalculator.csproj", "{4ACACF3E-EB8A-429A-8AA4-0D3BC1756A55}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JobCostCalculatorTests", "..\JobCostCalculatorTests\JobCostCalculatorTests.csproj", "{B837EBE4-F588-4A83-8974-7C2211651073}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4ACACF3E-EB8A-429A-8AA4-0D3BC1756A55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ACACF3E-EB8A-429A-8AA4-0D3BC1756A55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ACACF3E-EB8A-429A-8AA4-0D3BC1756A55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ACACF3E-EB8A-429A-8AA4-0D3BC1756A55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B837EBE4-F588-4A83-8974-7C2211651073}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B837EBE4-F588-4A83-8974-7C2211651073}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B837EBE4-F588-4A83-8974-7C2211651073}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B837EBE4-F588-4A83-8974-7C2211651073}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
