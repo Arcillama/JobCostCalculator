@@ -92,9 +92,49 @@ an additional 5% margin (16% total) applied.
 
     public class JobLoader
     {
-        public Job LoadJob(string filename)
+        public Job LoadJob(IEnumerable<string> input)
         {
-            return new Job();
+            bool extraMargin = input.FirstOrDefault().Trim() == "extra-margin";
+
+            var job = new Job
+            {
+                ApplyExtraMargin = extraMargin,
+                PrintItems = input
+                    .Skip(extraMargin ? 1 : 0)
+                    .Select(ReadPrintItem)
+                    .ToList()
+            };
+
+            return job;
+        }
+
+        private PrintItem ReadPrintItem(string line)
+        {
+            var tokens = line.Trim().Split(' ');
+            return new PrintItem
+            {
+                Name = tokens[0],
+                PrintingCost = Decimal.Parse(tokens[1]),
+                TaxExempt = tokens.Length > 2 && tokens[2] == "exempt",
+            };
+        }
+    }
+
+    public class JobRenderer
+    {
+        public string Render(Job job)
+        {
+            var sb = new StringBuilder();
+
+            if (job.ApplyExtraMargin) sb.AppendLine("extra-margin");
+            job.PrintItems.ForEach(i =>
+            {
+                sb.Append($"{i.Name} {i.PrintingCost:0.00}");
+                if (i.TaxExempt) sb.Append(" exempt");
+                sb.AppendLine();
+            });
+
+            return sb.ToString();
         }
     }
 
@@ -113,20 +153,13 @@ an additional 5% margin (16% total) applied.
         }
     }
 
-    public class InvoicePersister
+    public class FilePersiter
     {
-        private readonly InvoiceRenderer renderer;
-
-        public InvoicePersister(InvoiceRenderer renderer)
-        {
-            this.renderer = renderer;
-        }
-
-        public void SaveInvoice(Invoice invoice, string filename)
+        public void Save(string content, string filename)
         {
             using (StreamWriter file = new StreamWriter(filename))
             {
-                file.Write(renderer.Render(invoice));
+                file.Write(content);
             }
         }
     }

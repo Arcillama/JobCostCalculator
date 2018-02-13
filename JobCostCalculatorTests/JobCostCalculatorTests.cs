@@ -10,9 +10,16 @@ namespace JobCostCalculator.Tests
     {
         private static object[] TestInvoiceSet =
         {
-            new object[] { JobsMother.CreateJob1(), JobsMother.ExpectedInvoiceJob1 },
-            new object[] { JobsMother.CreateJob2(), JobsMother.ExpectedInvoiceJob2 },
-            new object[] { JobsMother.CreateJob3(), JobsMother.ExpectedInvoiceJob3 }
+            new object[] { TestDataMother.CreateJob1(), TestDataMother.ExpectedInvoiceJob1 },
+            new object[] { TestDataMother.CreateJob2(), TestDataMother.ExpectedInvoiceJob2 },
+            new object[] { TestDataMother.CreateJob3(), TestDataMother.ExpectedInvoiceJob3 }
+        };
+
+        private static object[] TestSet =
+       {
+            new object[] { TestDataMother.ExpectedInputJob1, TestDataMother.ExpectedInvoiceJob1 },
+            new object[] { TestDataMother.ExpectedInputJob2, TestDataMother.ExpectedInvoiceJob2 },
+            new object[] { TestDataMother.ExpectedInputJob3, TestDataMother.ExpectedInvoiceJob3 }
         };
 
         private JobCostCalculator sut;
@@ -38,23 +45,46 @@ namespace JobCostCalculator.Tests
             Assert.AreEqual(expectedOutput, invoiceReport);
         }
 
-        [TestCaseSource(nameof(TestInvoiceSet))]
-        public void Ivoice_for_job_should_be_persisted_to_file(Job job, string expectedOutput)
+        public class JobProcessor
         {
-            var filename = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestTestInvoice.txt");
+            private readonly JobCostCalculator calculator;
+            private readonly InvoiceRenderer \renderer;
+            private readonly JobLoader jobLoader;
+
+            public JobProcessor(JobCostCalculator calculator, InvoiceRenderer renderer, JobLoader jobLoader)
+            {
+                this.calculator = calculator;
+                \renderer = renderer;
+                this.jobLoader = jobLoader;
+            }
+        }
+
+        [TestCaseSource(nameof(TestSet))]
+        public void Job_should_be_loaded_from_file_and_invoice_should_pe_persited_tofile(string expectedInput, string expectedOutput)
+        {
+            var outputFilename = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestInvoice.txt");
+            var inputFilename = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestJob.txt");
+
+            File.Delete(inputFilename);
+            Assert.False(File.Exists(inputFilename), "Test cannot run - file was not deleted");
+            File.Delete(outputFilename);
+            Assert.False(File.Exists(outputFilename), "Test cannot run - file was not deleted");
+
             var renderer = new InvoiceRenderer();
-            var persister = new InvoicePersister(renderer);
+            var persister = new FilePersiter();
+            var jobLoader = new JobLoader();
 
-            File.Delete(filename);
-            Assert.False(File.Exists(filename), "Test cannot run - file was not deleted");
-            persister.SaveInvoice(sut.CalculateInvoice(job), filename);
+            persister.Save(expectedInput, inputFilename);
+            var jobFromfile = jobLoader.LoadJob(File.ReadAllLines(inputFilename));
+            string invoiceReport = renderer.Render(sut.CalculateInvoice(jobFromfile));
+            persister.Save(invoiceReport, outputFilename);
 
-            Assert.True(File.Exists(filename), "File wasn't saved");
-            Assert.AreEqual(expectedOutput, File.ReadAllText(filename));
+            Assert.True(File.Exists(outputFilename), "File wasn't saved");
+            Assert.AreEqual(expectedOutput, File.ReadAllText(outputFilename));
         }
     }
 
-    public static class JobsMother
+    public static class TestDataMother
     {
         public static Job CreateJob1()
         {
@@ -131,6 +161,22 @@ total: $346.96
         @"frisbees: $19385.38
 yo-yos: $1829.00
 total: $24608.68
+";
+
+        public static string ExpectedInputJob1 =
+@"extra-margin
+envelopes 520.00
+letterhead 1983.37 exempt
+";
+
+        public static string ExpectedInputJob2 =
+@"t-shirts 294.04
+";
+
+        public static string ExpectedInputJob3 =
+@"extra-margin
+frisbees 19385.38 exempt
+yo-yos 1829 exempt
 ";
     }
 }
