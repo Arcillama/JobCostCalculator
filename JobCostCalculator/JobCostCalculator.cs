@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -48,27 +49,19 @@ an additional 5% margin (16% total) applied.
 
     public class JobCostCalculator
     {
-        private readonly Job job;
-
         public Decimal ExtraMargin { get; set; }
-
         public Decimal Margin { get; set; }
-
         public Decimal SalesTax { get; set; }
 
-        public JobCostCalculator(Job job)
-        {
-            this.job = job;
-        }
-
-        public Invoice CalculateInvoice()
+        public Invoice CalculateInvoice(Job job)
         {
             /*
                 The final cost is rounded to the nearest even cent. Individual items are
                 rounded to the nearest cent.
             */
+            decimal CalculateItemCost(PrintItem item) => item.PrintingCost * (1 + (item.TaxExempt ? 0M : SalesTax));
 
-            //TODO RoundingUtils.RoundToNearestCent maybe test for that
+            decimal CalculateMargin(PrintItem item) => item.PrintingCost * (Margin + (job.ApplyExtraMargin ? ExtraMargin : 0m));
 
             var invoice = new Invoice();
 
@@ -95,21 +88,21 @@ an additional 5% margin (16% total) applied.
 
             return invoice;
         }
+    }
 
-        private decimal CalculateItemCost(PrintItem item)
+    public class JobLoader
+    {
+        public Job LoadJob(string filename)
         {
-            return item.PrintingCost * (1 + (item.TaxExempt ? 0M : SalesTax));
+            return new Job();
         }
+    }
 
-        private decimal CalculateMargin(PrintItem item)
-        {
-            return item.PrintingCost * (Margin + (job.ApplyExtraMargin ? ExtraMargin : 0m));
-        }
-
-        public string PrintOutInvoice()
+    public class InvoiceRenderer
+    {
+        public string Render(Invoice invoice)
         {
             var sb = new StringBuilder();
-            var invoice = CalculateInvoice();
 
             invoice.Items.ForEach(i => sb.AppendLine($"{i.Name}: ${i.PrintingCost:0.00}"));
 
@@ -117,6 +110,24 @@ an additional 5% margin (16% total) applied.
             sb.AppendLine();
 
             return sb.ToString();
+        }
+    }
+
+    public class InvoicePersister
+    {
+        private readonly InvoiceRenderer renderer;
+
+        public InvoicePersister(InvoiceRenderer renderer)
+        {
+            this.renderer = renderer;
+        }
+
+        public void SaveInvoice(Invoice invoice, string filename)
+        {
+            using (StreamWriter file = new StreamWriter(filename))
+            {
+                file.Write(renderer.Render(invoice));
+            }
         }
     }
 
@@ -143,15 +154,6 @@ an additional 5% margin (16% total) applied.
             foreach (T item in enumeration)
             {
                 action(item);
-            }
-        }
-
-        public static IEnumerable<T> ProcessEach<T>(this IEnumerable<T> enumeration, Action<T> action)
-        {
-            foreach (T item in enumeration)
-            {
-                action(item);
-                yield return item;
             }
         }
     }

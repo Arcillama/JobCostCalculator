@@ -1,5 +1,7 @@
 ﻿using NUnit.Framework;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 
 namespace JobCostCalculator.Tests
 {
@@ -13,32 +15,53 @@ namespace JobCostCalculator.Tests
             new object[] { JobsMother.CreateJob3(), JobsMother.ExpectedInvoiceJob3 }
         };
 
-        [TestCaseSource(nameof(TestInvoiceSet))]
-        public void Ivoice_for_job_should_be_calculated(Job job, string expectedOutput)
+        private JobCostCalculator sut;
+
+        [SetUp]
+        public void SetUp()
         {
-            var calc = new JobCostCalculator(job);
+            sut = new JobCostCalculator()
+            {
+                ExtraMargin = 0.05m,
+                Margin = 0.11m,
+                SalesTax = 0.07m
+            };
+        }
 
-            calc.ExtraMargin = 0.05m;
-            calc.Margin = 0.11m;
-            calc.SalesTax = 0.07m;
+        [TestCaseSource(nameof(TestInvoiceSet))]
+        public void Ivoice_for_job_should_be_rendered(Job job, string expectedOutput)
+        {
+            var renderer = new InvoiceRenderer();
 
-            string invoiceReport = calc.PrintOutInvoice();//later we will refactor to some renderer if needed- - TODO : invoiceCalculator and InvoiceRender
-
-            System.Console.WriteLine(expectedOutput);
-            System.Console.WriteLine();
-            System.Console.WriteLine(invoiceReport);
+            string invoiceReport = renderer.Render(sut.CalculateInvoice(job));
 
             Assert.AreEqual(expectedOutput, invoiceReport);
         }
 
-        public static class JobsMother
+        [TestCaseSource(nameof(TestInvoiceSet))]
+        public void Ivoice_for_job_should_be_persisted_to_file(Job job, string expectedOutput)
         {
-            public static Job CreateJob1()
+            var filename = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestTestInvoice.txt");
+            var renderer = new InvoiceRenderer();
+            var persister = new InvoicePersister(renderer);
+
+            File.Delete(filename);
+            Assert.False(File.Exists(filename), "Test cannot run - file was not deleted");
+            persister.SaveInvoice(sut.CalculateInvoice(job), filename);
+
+            Assert.True(File.Exists(filename), "File wasn't saved");
+            Assert.AreEqual(expectedOutput, File.ReadAllText(filename));
+        }
+    }
+
+    public static class JobsMother
+    {
+        public static Job CreateJob1()
+        {
+            return new Job
             {
-                return new Job
-                {
-                    ApplyExtraMargin = true,
-                    PrintItems = new List<PrintItem>
+                ApplyExtraMargin = true,
+                PrintItems = new List<PrintItem>
                     {
                         new PrintItem
                         {
@@ -52,66 +75,66 @@ namespace JobCostCalculator.Tests
                             TaxExempt = true
                         }
                     }
-                };
-            }
+            };
+        }
 
-            public static string ExpectedInvoiceJob1 =
-                @"envelopes: $556.40
+        public static string ExpectedInvoiceJob1 =
+            @"envelopes: $556.40
 letterhead: $1983.37
 total: $2940.30
 ";
 
-            public static Job CreateJob2()
+        public static Job CreateJob2()
+        {
+            return new Job
             {
-                return new Job
+                PrintItems = new List<PrintItem>
                 {
-                    PrintItems = new List<PrintItem>
-                    {
                     new PrintItem
                     {
-                    Name = "t-shirts",
-                    PrintingCost =294.04m,
+                        Name = "t-shirts",
+                        PrintingCost =294.04m,
+                    }
                 }
-            }
-                };
-            }
+            };
+        }
 
-            public static string ExpectedInvoiceJob2 =
-            @"t-shirts: $314.62
+        public static string ExpectedInvoiceJob2 =
+        @"t-shirts: $314.62
 total: $346.96
 ";
 
-            public static Job CreateJob3()
+        public static Job CreateJob3()
+        {
+            return new Job
             {
-                return new Job
+                ApplyExtraMargin = true,
+                PrintItems = new List<PrintItem>
                 {
-                    ApplyExtraMargin = true,
-                    PrintItems = new List<PrintItem>
-                {
-                new PrintItem
-                {
-                    Name = "frisbees",
-                    PrintingCost = 19385.38m,
-                    TaxExempt = true
-                },
-                new PrintItem
-                {
-                    Name = "yo-yos",
-                    PrintingCost =1829m,
-                    TaxExempt = true
+                    new PrintItem
+                    {
+                        Name = "frisbees",
+                        PrintingCost = 19385.38m,
+                        TaxExempt = true
+                    },
+                    new PrintItem
+                    {
+                        Name = "yo-yos",
+                        PrintingCost =1829m,
+                        TaxExempt = true
+                    }
                 }
-            }
-                };
-            }
+            };
+        }
 
-            public static string ExpectedInvoiceJob3 =
-            @"frisbees: $19385.38
+        public static string ExpectedInvoiceJob3 =
+        @"frisbees: $19385.38
 yo-yos: $1829.00
 total: $24608.68
 ";
-        }
     }
 }
+
 /*
 Job 1:
 
