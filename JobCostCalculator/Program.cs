@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using JobCostCalculator.Properties;
+using System;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,9 +38,9 @@ namespace JobCostCalculator
 
                 var calculator = new JobCostCalculator() //todo read it from config
                 {
-                    ExtraMargin = 0.05m,
-                    Margin = 0.11m,
-                    SalesTax = 0.07m
+                    ExtraMargin = Settings.Default.ExtraMargin,
+                    Margin = Settings.Default.Margin,
+                    SalesTax = Settings.Default.SalesTax,
                 };
 
                 var renderer = new InvoiceRenderer();
@@ -66,42 +65,6 @@ namespace JobCostCalculator
                 return 1;
             }
             return 0;
-        }
-    }
-
-    public class ConsoleDao : IDao
-    {
-        private readonly JobParser _parser;
-        private readonly InvoiceRenderer _renderer;
-
-        public ConsoleDao(JobParser parser, InvoiceRenderer renderer)
-        {
-            _parser = parser;
-            _renderer = renderer;
-        }
-
-        public Job LoadJob()
-        {
-            return _parser.Parse(LoadInputFromConsole().Where(l => !String.IsNullOrEmpty(l)));
-        }
-
-        private List<string> LoadInputFromConsole()
-        {
-            var result = new List<string>();
-            string s;
-
-            do
-            {
-                s = Console.ReadLine();
-                result.Add(s);
-            } while (!String.IsNullOrEmpty(s));
-
-            return result;
-        }
-
-        public void SaveInvoice(Invoice invoice)
-        {
-            Console.WriteLine(_renderer.Render(invoice));
         }
     }
 }
