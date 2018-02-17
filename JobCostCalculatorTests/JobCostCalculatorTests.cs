@@ -15,7 +15,7 @@ namespace JobCostCalculator.Tests
             new object[] { TestDataMother.CreateJob3(), TestDataMother.ExpectedInvoiceJob3 }
         };
 
-        private static object[] TestSet =
+        private static object[] TestStringSet =
        {
             new object[] { TestDataMother.ExpectedInputJob1, TestDataMother.ExpectedInvoiceJob1 },
             new object[] { TestDataMother.ExpectedInputJob2, TestDataMother.ExpectedInvoiceJob2 },
@@ -23,12 +23,12 @@ namespace JobCostCalculator.Tests
             new object[] { TestDataMother.ExpectedInputEptyJob, TestDataMother.ExpectedOutputEptyJob }
         };
 
-        private JobCostCalculator sut;
+        private JobCostCalculator calculator;
 
         [SetUp]
         public void SetUp()
         {
-            sut = new JobCostCalculator()
+            calculator = new JobCostCalculator()
             {
                 ExtraMargin = 0.05m,
                 Margin = 0.11m,
@@ -41,12 +41,12 @@ namespace JobCostCalculator.Tests
         {
             var renderer = new InvoiceRenderer();
 
-            string invoiceReport = renderer.Render(sut.CalculateInvoice(job));
+            string invoiceReport = renderer.Render(calculator.CalculateInvoice(job));
 
             Assert.AreEqual(expectedOutput, invoiceReport);
         }
 
-        [TestCaseSource(nameof(TestSet))]
+        [TestCaseSource(nameof(TestStringSet))]
         public void Job_should_be_loaded_from_file_and_invoice_should_pe_persited_tofile(string expectedInput, string expectedOutput)
         {
             var outputFilename = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "TestInvoice.txt");
@@ -66,7 +66,7 @@ namespace JobCostCalculator.Tests
                 OutputFilename = outputFilename,
             };
 
-            var processor = new JobProcessor(sut, persister);
+            var processor = new JobProcessor(calculator, persister);
             processor.Process();
 
             Assert.True(File.Exists(outputFilename), "File wasn't saved");
