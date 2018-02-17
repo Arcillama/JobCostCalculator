@@ -20,7 +20,7 @@ namespace JobCostCalculator.Tests
             new object[] { TestDataMother.ExpectedInputJob1, TestDataMother.ExpectedInvoiceJob1 },
             new object[] { TestDataMother.ExpectedInputJob2, TestDataMother.ExpectedInvoiceJob2 },
             new object[] { TestDataMother.ExpectedInputJob3, TestDataMother.ExpectedInvoiceJob3 },
-            new object[] { TestDataMother.ExpectedInputEptyJob, TestDataMother.ExpectedInvoiceJob3 }
+            new object[] { TestDataMother.ExpectedInputEptyJob, TestDataMother.ExpectedOutputEptyJob }
         };
 
         private JobCostCalculator sut;
@@ -179,6 +179,9 @@ yo-yos 1829 exempt
 
         public static string ExpectedInputEptyJob =
 @"
+";
+        public static string ExpectedOutputEptyJob =
+@"total: $0.00
 ";
     }
 }
