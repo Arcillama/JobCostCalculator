@@ -33,18 +33,94 @@ The base margin is 11% for all jobs this problem. Some jobs have an
 
 an additional 5% margin (16% total) applied.
     */
+    public static class Extensions
+    {
+        public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
+        {
+            foreach (T item in enumeration)
+            {
+                action(item);
+            }
+        }
+    }
+
+    public class JobProcessor
+    {
+        private readonly JobCostCalculator calculator;
+        private readonly IDao dao;
+
+        public JobProcessor(JobCostCalculator calculator, IDao dao)
+        {
+            this.calculator = calculator;
+            this.dao = dao;
+        }
+
+        public void Process()
+        {
+            dao.SaveInvoice(calculator.CalculateInvoice(dao.LoadJob()));
+        }
+    }
+
+    public class FileDao : IDao
+    {
+        private readonly JobParser _parser;
+        private readonly InvoiceRenderer _renderer;
+        public string InputFilename { get; set; }
+        public string OutputFilename { get; set; }
+
+        public FileDao(JobParser parser, InvoiceRenderer renderer)
+        {
+            _parser = parser;
+            _renderer = renderer;
+        }
+
+        public Job LoadJob()
+        {
+            return _parser.Parse(File.ReadLines(InputFilename));
+        }
+
+        public void SaveInvoice(Invoice invoice)
+        {
+            using (StreamWriter file = new StreamWriter(OutputFilename))
+            {
+                file.Write(_renderer.Render(invoice));
+            }
+        }
+    }
+
+    public class Invoice
+    {
+        public List<InvoiceItem> Items { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class InvoiceItem
+    {
+        public string Name { get; set; }
+
+        public Decimal PrintingCost { get; set; }
+    }
+
+    public class InvoiceRenderer
+    {
+        public string Render(Invoice invoice)
+        {
+            var sb = new StringBuilder();
+
+            invoice.Items.ForEach(i => sb.AppendLine($"{i.Name}: ${i.PrintingCost:0.00}"));
+
+            sb.AppendFormat("total: ${0:0.00}", invoice.Total);
+            sb.AppendLine();
+
+            return sb.ToString();
+        }
+    }
+
     public class Job
     {
         public bool ApplyExtraMargin { get; set; }
 
         public List<PrintItem> PrintItems { get; set; }
-    }
-
-    public class Invoice
-    {
-        public decimal Total { get; set; }
-
-        public List<InvoiceItem> Items { get; set; }
     }
 
     public class JobCostCalculator
@@ -90,9 +166,9 @@ an additional 5% margin (16% total) applied.
         }
     }
 
-    public class JobLoader
+    public class JobParser
     {
-        public Job LoadJob(IEnumerable<string> input)
+        public Job Parse(IEnumerable<string> input)
         {
             bool extraMargin = input.FirstOrDefault().Trim() == "extra-margin";
 
@@ -138,39 +214,6 @@ an additional 5% margin (16% total) applied.
         }
     }
 
-    public class InvoiceRenderer
-    {
-        public string Render(Invoice invoice)
-        {
-            var sb = new StringBuilder();
-
-            invoice.Items.ForEach(i => sb.AppendLine($"{i.Name}: ${i.PrintingCost:0.00}"));
-
-            sb.AppendFormat("total: ${0:0.00}", invoice.Total);
-            sb.AppendLine();
-
-            return sb.ToString();
-        }
-    }
-
-    public class FilePersiter
-    {
-        public void Save(string content, string filename)
-        {
-            using (StreamWriter file = new StreamWriter(filename))
-            {
-                file.Write(content);
-            }
-        }
-    }
-
-    public class InvoiceItem
-    {
-        public string Name { get; set; }
-
-        public Decimal PrintingCost { get; set; }
-    }
-
     public class PrintItem
     {
         public string Name { get; set; }
@@ -180,14 +223,10 @@ an additional 5% margin (16% total) applied.
         public bool TaxExempt { get; set; }
     }
 
-    public static class Extensions
+    public interface IDao
     {
-        public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)
-        {
-            foreach (T item in enumeration)
-            {
-                action(item);
-            }
-        }
+        Job LoadJob();
+
+        void SaveInvoice(Invoice invoice);
     }
 }

@@ -19,7 +19,8 @@ namespace JobCostCalculator.Tests
        {
             new object[] { TestDataMother.ExpectedInputJob1, TestDataMother.ExpectedInvoiceJob1 },
             new object[] { TestDataMother.ExpectedInputJob2, TestDataMother.ExpectedInvoiceJob2 },
-            new object[] { TestDataMother.ExpectedInputJob3, TestDataMother.ExpectedInvoiceJob3 }
+            new object[] { TestDataMother.ExpectedInputJob3, TestDataMother.ExpectedInvoiceJob3 },
+            new object[] { TestDataMother.ExpectedInputEptyJob, TestDataMother.ExpectedInvoiceJob3 }
         };
 
         private JobCostCalculator sut;
@@ -45,20 +46,6 @@ namespace JobCostCalculator.Tests
             Assert.AreEqual(expectedOutput, invoiceReport);
         }
 
-        public class JobProcessor
-        {
-            private readonly JobCostCalculator calculator;
-            private readonly InvoiceRenderer \renderer;
-            private readonly JobLoader jobLoader;
-
-            public JobProcessor(JobCostCalculator calculator, InvoiceRenderer renderer, JobLoader jobLoader)
-            {
-                this.calculator = calculator;
-                \renderer = renderer;
-                this.jobLoader = jobLoader;
-            }
-        }
-
         [TestCaseSource(nameof(TestSet))]
         public void Job_should_be_loaded_from_file_and_invoice_should_pe_persited_tofile(string expectedInput, string expectedOutput)
         {
@@ -69,18 +56,29 @@ namespace JobCostCalculator.Tests
             Assert.False(File.Exists(inputFilename), "Test cannot run - file was not deleted");
             File.Delete(outputFilename);
             Assert.False(File.Exists(outputFilename), "Test cannot run - file was not deleted");
+            SaveFile(expectedInput, inputFilename);
 
             var renderer = new InvoiceRenderer();
-            var persister = new FilePersiter();
-            var jobLoader = new JobLoader();
+            var parser = new JobParser();
+            var persister = new FileDao(parser, renderer)
+            {
+                InputFilename = inputFilename,
+                OutputFilename = outputFilename,
+            };
 
-            persister.Save(expectedInput, inputFilename);
-            var jobFromfile = jobLoader.LoadJob(File.ReadAllLines(inputFilename));
-            string invoiceReport = renderer.Render(sut.CalculateInvoice(jobFromfile));
-            persister.Save(invoiceReport, outputFilename);
+            var processor = new JobProcessor(sut, persister);
+            processor.Process();
 
             Assert.True(File.Exists(outputFilename), "File wasn't saved");
             Assert.AreEqual(expectedOutput, File.ReadAllText(outputFilename));
+        }
+
+        private void SaveFile(string content, string filename)
+        {
+            using (StreamWriter file = new StreamWriter(filename))
+            {
+                file.Write(content);
+            }
         }
     }
 
@@ -177,6 +175,10 @@ letterhead 1983.37 exempt
 @"extra-margin
 frisbees 19385.38 exempt
 yo-yos 1829 exempt
+";
+
+        public static string ExpectedInputEptyJob =
+@"
 ";
     }
 }
